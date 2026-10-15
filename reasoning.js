@@ -163,7 +163,6 @@ const REASONING_EFFORT_ENUMS = {
   'minimaxai/minimax-m3': ['adaptive'],
   'moonshotai/kimi-k3': ['low', 'high', 'max'],
   'meta/muse-glimmer-30b': ['none', 'minimal', 'low', 'medium', 'high', 'max'],
-  'z-ai/glm-5-3-flash': ['low', 'high', 'max'],
   'z-ai/glm-5.3-flash': ['low', 'high', 'max']
 };
 
@@ -213,7 +212,7 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
       if (!enableThinking) return {};
       const payload = { chat_template_kwargs: { enable_thinking: true } };
       if (effort === 'low') payload.chat_template_kwargs.low_effort = true;
-      if (hasTools) payload.chat_template_kwargs.force_nonempty_content = true; // unverified
+      if (hasTools) payload.chat_template_kwargs.force_nonempty_content = true;
       return payload;
     }
 
@@ -225,9 +224,6 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
     case 'deepseek-ai/deepseek-v4-flash-0731':
     case 'deepseek-ai/deepseek-v4-pro-0813':
     case 'deepseek-ai/deepseek-v4.1-flash': {
-      // NVIDIA NIM's DeepSeek V4 models require chat_template_kwargs with
-      // thinking:true to stream reasoning_content at all. Without it the
-      // request hangs or returns no reasoning.
       const level = process.env.REASONING_EFFORT || effort || 'high';
       return {
         chat_template_kwargs: {
@@ -257,18 +253,20 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
       return { reasoning_effort: enableThinking ? 'high' : 'none' };
     }
 
-    case 'z-ai/glm-5-3-flash':
     case 'z-ai/glm-5.3-flash': {
-      // NVIDIA NIM's GLM-5.3-Flash uses a TOP-LEVEL reasoning_effort
-      // parameter, NOT chat_template_kwargs. Valid values: low, high, max.
-      // Thinking is always enabled and cannot be disabled.
+      // GLM-5.3-Flash on NVIDIA NIM:
+      // - Model ID uses a dot: z-ai/glm-5.3-flash
+      // - Thinking is ALWAYS enabled (cannot be disabled)
+      // - reasoning_effort must be nested inside chat_template_kwargs
+      // - Valid values: low, high, max (default max)
+      // - Do NOT send enable_thinking (template has no such variable)
       const level = process.env.REASONING_EFFORT || effort || 'high';
-      return { reasoning_effort: level };
+      return {
+        chat_template_kwargs: {
+          reasoning_effort: level
+        }
+      };
     }
-
-    // poolside/laguna-xs-2.1: no documented reasoning param on NIM's hosted
-    // endpoint (model, messages, temperature, top_p, max_tokens, stream
-    // only). Falls through to default.
 
     case 'minimaxai/minimax-m3': {
       const thinkingMode = effort === 'adaptive'
@@ -278,7 +276,6 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
     }
 
     case 'moonshotai/kimi-k3': {
-      // No off-switch — omitting the field falls back to Kimi's own 'max'.
       if (effort) return { reasoning_effort: effort };
       return { reasoning_effort: enableThinking ? 'high' : 'low' };
     }

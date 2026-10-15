@@ -222,14 +222,18 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
     }
 
     case 'deepseek-ai/deepseek-v4-flash-0731':
-    case 'deepseek-ai/deepseek-v4-pro-0813': {
-      if (!enableThinking) {
-        return { chat_template_kwargs: { thinking: false } };
-      }
+    case 'deepseek-ai/deepseek-v4-pro-0813':
+    case 'deepseek-ai/deepseek-v4.1-flash': {
+      // NVIDIA NIM's DeepSeek V4 models require chat_template_kwargs with
+      // thinking:true to stream reasoning_content at all. Without it the
+      // request hangs or returns no reasoning. The top-level reasoning_effort
+      // is ALSO required for effort control — NIM reads both.
+      // Valid effort values on NIM: low, high, max (no 'none' for these models).
+      const level = process.env.REASONING_EFFORT || effort || 'high';
       return {
         chat_template_kwargs: {
           thinking: true,
-          reasoning_effort: effort || 'high'
+          reasoning_effort: level
         }
       };
     }
@@ -256,10 +260,8 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
 
     case 'z-ai/glm-5-3-flash':
     case 'z-ai/glm-5.3-flash': {
-      // NVIDIA NIM requires BOTH enable_thinking AND clear_thinking nested
-      // inside chat_template_kwargs. Without clear_thinking:false, NIM may
-      // not properly retain/output reasoning content.
-      // reasoning_effort is validated against low/high/max (no 'none' allowed).
+      // GLM-5.3-Flash: thinking is forced on. NIM requires enable_thinking
+      // AND clear_thinking nested inside chat_template_kwargs.
       const level = process.env.REASONING_EFFORT || effort || 'high';
       return {
         chat_template_kwargs: {

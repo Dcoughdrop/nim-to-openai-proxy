@@ -77,7 +77,7 @@ const MODEL_MAPPING = {
   'gemini-turbo': 'nvidia/llama3-chatqa-1.5-70b',
   'gpt-3.5o': 'nvidia/nemotron-3.5-lightning-30b-a3b',
   'gpt-4-flash': 'deepseek-ai/deepseek-v4.1-flash',
-  'gpt-4o': 'deepseek-ai/deepseek-v4-pro-0813', // will be replaced by 4.1 pro when it releases, currently doesn't work
+  'gpt-4o': 'deepseek-ai/deepseek-v4-pro-0813',
   'mistral': 'mistralai/mistral-large-2-instruct', 
   'mistral-turbo': 'nv-mistralai/mistral-nemo-12b-instruct',
   'mistral-pro': 'mistralai/mistral-7b-instruct-v0.3', 
@@ -479,7 +479,10 @@ app.post('/v1/chat/completions', async (req, res) => {
     upstreamStream = response.data;
     console.log('[PROXY] Model used:', usedModel);
 
-    const inlineReasoning = req.headers['x-reasoning-format'] === 'inline';
+    // FORCED INLINE REASONING: JanitorAI cannot send custom headers, so we
+    // always inline reasoning as <thinking> tags inside content instead of
+    // relying on the client to opt in via x-reasoning-format.
+    const inlineReasoning = true;
 
     if (stream) {
       res.setHeader('Content-Type', 'text/event-stream');

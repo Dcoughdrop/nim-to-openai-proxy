@@ -259,16 +259,11 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
 
     case 'z-ai/glm-5-3-flash':
     case 'z-ai/glm-5.3-flash': {
-      // GLM-5.3-Flash: the template has NO enable_thinking variable.
-      // Only reasoning_effort (low/high/max) and clear_thinking exist.
-      // Sending enable_thinking causes the parser to disagree with the
-      // template and leak reasoning into content.
+      // NVIDIA NIM's GLM-5.3-Flash uses a TOP-LEVEL reasoning_effort
+      // parameter, NOT chat_template_kwargs. Valid values: low, high, max.
+      // Thinking is always enabled and cannot be disabled.
       const level = process.env.REASONING_EFFORT || effort || 'high';
-      return {
-        chat_template_kwargs: {
-          reasoning_effort: level
-        }
-      };
+      return { reasoning_effort: level };
     }
 
     // poolside/laguna-xs-2.1: no documented reasoning param on NIM's hosted

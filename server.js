@@ -107,7 +107,8 @@ const FALLBACK_MODELS = [
 
 // CORS — configured explicitly so preflight requests get proper headers.
 // `origin: true` reflects the request's Origin header, which works for
-// browser clients like JanitorAI. Options are handled before auth.
+// browser clients like JanitorAI. The cors() middleware handles OPTIONS
+// preflight automatically when mounted at the app level.
 app.use(cors({
   origin: true,
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -115,13 +116,6 @@ app.use(cors({
   credentials: false,
   maxAge: 86400
 }));
-
-// Explicit OPTIONS handler so preflight never falls through to the auth
-// middleware below. Express's cors() middleware normally short-circuits
-// OPTIONS, but only if it's mounted before any 404-catch or auth gate.
-app.options('*', (req, res) => {
-  res.sendStatus(204);
-});
 
 app.use(express.json({ limit: '50mb' }));
 
@@ -158,7 +152,8 @@ function safeTimingEqual(a, b) {
 
 app.use((req, res, next) => {
   // CORS preflight requests carry no Authorization header by design.
-  // Let them through so the browser gets the CORS headers from cors() above.
+  // cors() above already answered them, but keep this guard in case a
+  // future route bypasses the middleware ordering.
   if (req.method === 'OPTIONS') {
     return next();
   }

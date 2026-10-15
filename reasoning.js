@@ -256,13 +256,15 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
 
     case 'z-ai/glm-5-3-flash':
     case 'z-ai/glm-5.3-flash': {
-      // GLM-5.3-Flash: thinking is forced on and cannot be disabled.
-      // Only reasoning_effort is tunable, and NIM requires it nested
-      // inside chat_template_kwargs (top-level reasoning_effort is ignored).
+      // NVIDIA NIM requires BOTH enable_thinking AND clear_thinking nested
+      // inside chat_template_kwargs. Without clear_thinking:false, NIM may
+      // not properly retain/output reasoning content.
+      // reasoning_effort is validated against low/high/max (no 'none' allowed).
       const level = process.env.REASONING_EFFORT || effort || 'high';
       return {
         chat_template_kwargs: {
           enable_thinking: true,
+          clear_thinking: false,
           reasoning_effort: level
         }
       };

@@ -22,12 +22,10 @@ const ENABLE_THINKING_MODE = process.env.ENABLE_THINKING_MODE === 'true';
 const SKIP_VALIDATION = process.env.SKIP_VALIDATION === 'true';
 const DISCORD_WEBHOOK_URL = process.env.DISCORD_WEBHOOK_URL;
 
-// Verbose logging: reasoning payload per fallback attempt, full request/error bodies on failure.
 const DEBUG_MODE = process.env.DEBUG_MODE === 'true';
 
 const MAX_TOKENS_LIMIT = 65536;
 
-// Shared keep-alive agent for connection reuse on long-lived deployments.
 const keepAliveAgent = new https.Agent({
   keepAlive: true,
   maxSockets: 50,
@@ -39,13 +37,10 @@ const nim = axios.create({
   httpsAgent: keepAliveAgent
 });
 
-// Per-attempt timeout before falling back to the next model. Reasoning
-// models get a longer window since thinking delays first-token latency.
-// Check these against your platform's own request duration limit.
 const REQUEST_TIMEOUT_MS = Number(process.env.REQUEST_TIMEOUT_MS) || 180000;
 const REASONING_REQUEST_TIMEOUT_MS = Number(process.env.REASONING_REQUEST_TIMEOUT_MS) || 480000;
 const VALIDATION_TIMEOUT_MS = 15000;
-const MAX_BUFFER_SIZE = 1024 * 1024; // 1MB
+const MAX_BUFFER_SIZE = 1024 * 1024;
 
 if (ENABLE_THINKING_MODE) console.log('[CONFIG] Thinking mode: ENABLED');
 if (DEBUG_MODE) console.log('[CONFIG] Debug mode: ENABLED (verbose reasoning + fallback logging)');
@@ -84,7 +79,7 @@ const MODEL_MAPPING = {
   'google-lightest': 'meta/muse-glimmer-30b',
   'google-lighter': 'poolside/laguna-xs-2.1',
   'glm-5.3': 'z-ai/glm-5.3',
-  'glm-flash': 'z-ai/glm-5-3-flash',
+  'glm-flash': 'z-ai/glm-5.3-flash',
 
   'llama-vision': 'meta/llama-3.2-11b-vision-instruct',
   'vision': 'meta/llama-3.2-11b-vision-instruct',
@@ -92,10 +87,8 @@ const MODEL_MAPPING = {
   'llama-3.2-vision': 'meta/llama-3.2-11b-vision-instruct'
 };
 
-// Used when an unrecognized alias is requested. Must point at a live model.
 const DEFAULT_MODEL = 'google/diffusiongemma-26b-a4b-it';
 
-// Ordered by observed reliability/speed — an early failing model delays every fallback behind it.
 const FALLBACK_MODELS = [
   'google/diffusiongemma-26b-a4b-it',
   'google/gemma-4-31b-it',
@@ -105,10 +98,6 @@ const FALLBACK_MODELS = [
 
 // ─── Middleware ─────────────────────────────────────────────────────────
 
-// CORS — configured explicitly so preflight requests get proper headers.
-// `origin: true` reflects the request's Origin header, which works for
-// browser clients like JanitorAI. The cors() middleware handles OPTIONS
-// preflight automatically when mounted at the app level.
 app.use(cors({
   origin: true,
   methods: ['GET', 'POST', 'OPTIONS'],
@@ -119,7 +108,6 @@ app.use(cors({
 
 app.use(express.json({ limit: '50mb' }));
 
-// Malformed JSON body -> clean OpenAI-style error instead of Express's default HTML error page.
 app.use((err, req, res, next) => {
   if (err && err.type === 'entity.parse.failed') {
     return res.status(400).json({
@@ -151,9 +139,6 @@ function safeTimingEqual(a, b) {
 }
 
 app.use((req, res, next) => {
-  // CORS preflight requests carry no Authorization header by design.
-  // cors() above already answered them, but keep this guard in case a
-  // future route bypasses the middleware ordering.
   if (req.method === 'OPTIONS') {
     return next();
   }
@@ -477,9 +462,6 @@ app.post('/v1/chat/completions', async (req, res) => {
     upstreamStream = response.data;
     console.log('[PROXY] Model used:', usedModel);
 
-    // FORCED INLINE REASONING: JanitorAI cannot send custom headers, so we
-    // always inline reasoning as <thinking> tags inside content instead of
-    // relying on the client to opt in via x-reasoning-format.
     const inlineReasoning = true;
 
     if (stream) {

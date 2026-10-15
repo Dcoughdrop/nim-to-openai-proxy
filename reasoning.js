@@ -161,7 +161,9 @@ const REASONING_EFFORT_ENUMS = {
   'nvidia/nemotron-3-ultra-550b-a55b': ['low'],
   'minimaxai/minimax-m3': ['adaptive'],
   'moonshotai/kimi-k3': ['low', 'high', 'max'],
-  'meta/muse-glimmer-30b': ['none', 'minimal', 'low', 'medium', 'high', 'max']
+  'meta/muse-glimmer-30b': ['none', 'minimal', 'low', 'medium', 'high', 'max'],
+  'z-ai/glm-5-3-flash': ['low', 'high', 'max'],
+  'z-ai/glm-5.3-flash': ['low', 'high', 'max']
 };
 
 function validReasoningEffort(model, effort) {
@@ -250,6 +252,20 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
     case 'meta/muse-glimmer-30b': {
       if (effort) return { reasoning_effort: effort };
       return { reasoning_effort: enableThinking ? 'high' : 'none' };
+    }
+
+    case 'z-ai/glm-5-3-flash':
+    case 'z-ai/glm-5.3-flash': {
+      // GLM-5.3-Flash: thinking is forced on and cannot be disabled.
+      // Only reasoning_effort is tunable, and NIM requires it nested
+      // inside chat_template_kwargs (top-level reasoning_effort is ignored).
+      const level = process.env.REASONING_EFFORT || effort || 'high';
+      return {
+        chat_template_kwargs: {
+          enable_thinking: true,
+          reasoning_effort: level
+        }
+      };
     }
 
     // poolside/laguna-xs-2.1: no documented reasoning param on NIM's hosted

@@ -163,7 +163,8 @@ const REASONING_EFFORT_ENUMS = {
   'minimaxai/minimax-m3': ['adaptive'],
   'moonshotai/kimi-k3': ['low', 'high', 'max'],
   'meta/muse-glimmer-30b': ['none', 'minimal', 'low', 'medium', 'high', 'max'],
-  'z-ai/glm-5.3-flash': ['low', 'high', 'max']
+  'z-ai/glm-5.3-flash': ['low', 'high', 'max'],
+  'stepfun-ai/step-5-preview': ['low', 'medium', 'high']
 };
 
 function validReasoningEffort(model, effort) {
@@ -254,18 +255,24 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
     }
 
     case 'z-ai/glm-5.3-flash': {
-      // GLM-5.3-Flash on NVIDIA NIM:
-      // - Model ID uses a dot: z-ai/glm-5.3-flash
-      // - Thinking is ALWAYS enabled (cannot be disabled)
-      // - reasoning_effort must be nested inside chat_template_kwargs
-      // - Valid values: low, high, max (default max)
-      // - Do NOT send enable_thinking (template has no such variable)
+      // GLM-5.3-Flash: the template has NO enable_thinking variable.
+      // Only reasoning_effort (low/high/max) and clear_thinking exist.
+      // Sending enable_thinking causes the parser to disagree with the
+      // template and leak reasoning into content.
       const level = process.env.REASONING_EFFORT || effort || 'high';
       return {
         chat_template_kwargs: {
           reasoning_effort: level
         }
       };
+    }
+
+    case 'stepfun-ai/step-5-preview': {
+      // Step 5 Preview supports low/medium/high via top-level reasoning_effort.
+      // Official StepFun docs confirm this parameter for the Chat Completions API.
+      // Default is 'low' if unset, but we fall back to 'medium' as a safe middle ground.
+      const level = process.env.REASONING_EFFORT || effort || 'medium';
+      return { reasoning_effort: level };
     }
 
     case 'minimaxai/minimax-m3': {

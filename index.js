@@ -11,7 +11,9 @@ const { SHOW_REASONING, getReasoningPayload, resolveEffectiveThinking, StreamNor
 const { extractLeakedToolCalls, ToolCallStreamRecovery } = require('./tools');
 
 const app = express();
-const PORT = process.env.PORT || 3000;
+
+// ─── FIXED: Bot-Hosting Port Binding ─────────────────────────────────────
+const PORT = process.env.SERVER_PORT || process.env.PORT || 3000;
 
 // ─── Configuration ──────────────────────────────────────────────────────
 
@@ -768,7 +770,8 @@ app.use((req, res) => {
 
 // ─── Startup ──────────────────────────────────────────────────────────────
 
-app.listen(PORT, () => {
+// ─── FIXED: Bind to 0.0.0.0 so Bot-Hosting can reach it ──────────────────
+app.listen(PORT, '0.0.0.0', () => {
   console.log(`[PROXY] Hybrid proxy running on port ${PORT}`);
   console.log(`[PROXY] Max tokens limit: ${MAX_TOKENS_LIMIT}`);
   validateModels().catch(err => {

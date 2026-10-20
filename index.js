@@ -80,10 +80,12 @@ const MODEL_MAPPING = {
   'google-light': 'google/gemma-4-31b-it',
   'google-lightest': 'meta/muse-glimmer-30b',
   'google-lighter': 'poolside/laguna-xs-2.1',
+  
+  // GLM Setup:
   'glm-5.3': 'z-ai/glm-5.3',
   'glm-flash': 'z-ai/glm-5.3-flash',
   
-  // Exact ID mapping for your extension test:
+  // StepFun Setup (if you ever want to switch back):
   'stepfun-ai/step-5-preview': 'stepfun-ai/step-5-preview',
 
   'llama-vision': 'meta/llama-3.2-11b-vision-instruct',

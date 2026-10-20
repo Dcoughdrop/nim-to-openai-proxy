@@ -254,13 +254,13 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
     }
 
     case 'z-ai/glm-5.3-flash': {
-      // GLM-5.3-Flash: the template has NO enable_thinking variable.
-      // Only reasoning_effort (low/high/max) and clear_thinking exist.
-      // Sending enable_thinking causes the parser to disagree with the
-      // template and leak reasoning into content.
+      // NVIDIA NIM GLM models require chat_template_kwargs to activate thinking.
+      // Top-level reasoning_effort is silently ignored.
+      // Valid values: low, high, max.
       const level = process.env.REASONING_EFFORT || effort || 'high';
       return {
         chat_template_kwargs: {
+          enable_thinking: true,
           reasoning_effort: level
         }
       };

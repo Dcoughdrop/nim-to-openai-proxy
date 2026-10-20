@@ -2,14 +2,14 @@
   "name": "openai-nim-proxy",
   "version": "4.2.0",
   "description": "OpenAI compatible proxy for NVIDIA NIM API",
-  "main": "server.js",
+  "main": "index.js",
   "scripts": {
-    "start": "node server.js"
+    "start": "node index.js"
   },
   "dependencies": {
     "express": "^5.2.1",
     "cors": "^2.8.6",
-    "axios": "^1.17.0"
+    "axios": "1.11.0"
   },
   "engines": {
     "node": "22.15.0"

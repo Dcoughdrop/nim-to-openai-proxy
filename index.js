@@ -730,7 +730,17 @@ app.post('/v1/chat/completions', async (req, res) => {
     }
   } catch (error) {
     console.error('[PROXY] Fatal error:', error.message);
-    console.error('[PROXY] NIM response:', error.response?.data);
+    
+    // ─── FIXED: Circular JSON Crash Handling ─────────────────────────────
+    if (error.response && error.response.data) {
+      try {
+        console.error('[PROXY] NIM response:', JSON.stringify(error.response.data));
+      } catch (e) {
+        console.error('[PROXY] NIM response could not be stringified.');
+      }
+    } else {
+      console.error('[PROXY] No response data from NIM.');
+    }
 
     if (!res.headersSent) {
       res.set('Content-Type', 'application/json');
@@ -770,7 +780,6 @@ app.use((req, res) => {
 
 // ─── Startup ──────────────────────────────────────────────────────────────
 
-// ─── FIXED: Bind to 0.0.0.0 so Bot-Hosting can reach it ──────────────────
 app.listen(PORT, '0.0.0.0', () => {
   console.log(`[PROXY] Hybrid proxy running on port ${PORT}`);
   console.log(`[PROXY] Max tokens limit: ${MAX_TOKENS_LIMIT}`);

@@ -163,8 +163,7 @@ const REASONING_EFFORT_ENUMS = {
   'minimaxai/minimax-m3': ['adaptive'],
   'moonshotai/kimi-k3': ['low', 'high', 'max'],
   'meta/muse-glimmer-30b': ['none', 'minimal', 'low', 'medium', 'high', 'max'],
-  'z-ai/glm-5.3-flash': ['low', 'high', 'max'],
-  'stepfun-ai/step-5-preview': ['low', 'medium', 'high']
+  'z-ai/glm-5.3-flash': ['low', 'high', 'max']
 };
 
 function validReasoningEffort(model, effort) {
@@ -265,14 +264,6 @@ function getReasoningPayload(model, enableThinking, clientReasoningEffort, hasTo
           reasoning_effort: level
         }
       };
-    }
-
-    case 'stepfun-ai/step-5-preview': {
-      // Step 5 Preview supports low/medium/high via top-level reasoning_effort.
-      // Official StepFun docs confirm this parameter for the Chat Completions API.
-      // Default is 'low' if unset, but we fall back to 'medium' as a safe middle ground.
-      const level = process.env.REASONING_EFFORT || effort || 'medium';
-      return { reasoning_effort: level };
     }
 
     case 'minimaxai/minimax-m3': {

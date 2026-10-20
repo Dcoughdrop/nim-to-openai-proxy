@@ -1,4 +1,4 @@
-// server.js — OpenAI-compatible proxy for NVIDIA NIM
+// index.js — OpenAI-compatible proxy for NVIDIA NIM
 // Reasoning payload logic: reasoning.js. Tool-call leak recovery: tools.js.
 
 const express = require('express');
@@ -82,7 +82,9 @@ const MODEL_MAPPING = {
   'google-lighter': 'poolside/laguna-xs-2.1',
   'glm-5.3': 'z-ai/glm-5.3',
   'glm-flash': 'z-ai/glm-5.3-flash',
-  'stepfun': 'stepfun-ai/step-5-preview',
+  
+  // Exact ID mapping for your extension test:
+  'stepfun-ai/step-5-preview': 'stepfun-ai/step-5-preview',
 
   'llama-vision': 'meta/llama-3.2-11b-vision-instruct',
   'vision': 'meta/llama-3.2-11b-vision-instruct',
@@ -762,7 +764,6 @@ app.post('/v1/chat/completions', async (req, res) => {
       res.end();
     }
 
-    // Only destroy if it's actually a stream object
     if (upstreamStream && typeof upstreamStream.destroy === 'function' && !upstreamStream.destroyed) {
       upstreamStream.destroy();
     }

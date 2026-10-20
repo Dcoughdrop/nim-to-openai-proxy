@@ -729,13 +729,13 @@ app.post('/v1/chat/completions', async (req, res) => {
       res.json(openaiResponse);
     }
   } catch (error) {
-    console.error('[PROXY] Fatal error:', error.message);
-    
     // ─── FIXED: Circular JSON Crash Handling ─────────────────────────────
+    console.error('[PROXY] Fatal error:', error.message || 'Unknown error');
+    
     if (error.response && error.response.data) {
       try {
         console.error('[PROXY] NIM response:', JSON.stringify(error.response.data));
-      } catch (e) {
+      } catch (stringifyError) {
         console.error('[PROXY] NIM response could not be stringified.');
       }
     } else {
@@ -746,7 +746,7 @@ app.post('/v1/chat/completions', async (req, res) => {
       res.set('Content-Type', 'application/json');
       res.status(error.response?.status || 500).json({
         error: {
-          message: error.message,
+          message: error.message || 'Proxy Error',
           type: 'invalid_request_error',
           code: error.response?.status || 500
         }
@@ -754,7 +754,7 @@ app.post('/v1/chat/completions', async (req, res) => {
     } else if (!res.writableEnded) {
       safeWrite(res, `data: ${JSON.stringify({
         error: {
-          message: error.message,
+          message: error.message || 'Proxy Error',
           type: 'proxy_error'
         }
       })}\n\n`);
@@ -762,7 +762,8 @@ app.post('/v1/chat/completions', async (req, res) => {
       res.end();
     }
 
-    if (upstreamStream && !upstreamStream.destroyed) {
+    // Only destroy if it's actually a stream object
+    if (upstreamStream && typeof upstreamStream.destroy === 'function' && !upstreamStream.destroyed) {
       upstreamStream.destroy();
     }
   }
